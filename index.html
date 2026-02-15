@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>CHAOS GLITCH</title>
+
+<style>
+html,body{
+  margin:0;
+  padding:0;
+  background:black;
+  overflow:hidden;
+  height:100vh;
+  font-family:monospace;
+}
+
+#glitchContainer{
+  position:fixed;
+  inset:0;
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  font-size:18px;
+  white-space:pre;
+  text-align:center;
+  color:white;
+  mix-blend-mode:screen;
+}
+
+/* RGB Shift */
+.rgb{
+  animation:rgbShift 0.05s infinite;
+}
+
+@keyframes rgbShift{
+  0%{text-shadow:5px 0 red,-5px 0 cyan;}
+  50%{text-shadow:-6px 0 blue,6px 0 magenta;}
+  100%{text-shadow:5px 0 red,-5px 0 cyan;}
+}
+
+/* Tremblement */
+.shake{
+  animation:shake 0.05s infinite;
+}
+
+@keyframes shake{
+  0%{transform:translate(15px,-10px);}
+  25%{transform:translate(-18px,12px);}
+  50%{transform:translate(10px,-15px);}
+  75%{transform:translate(-12px,-8px);}
+  100%{transform:translate(0,0);}
+}
+
+/* Bandes horizontales */
+.band{
+  position:absolute;
+  width:100%;
+  height:40px;
+  background:linear-gradient(
+    90deg,
+    red,
+    yellow,
+    cyan,
+    magenta,
+    lime
+  );
+  opacity:0.4;
+  mix-blend-mode:overlay;
+}
+</style>
+</head>
+
+<body>
+
+<canvas id="canvas"></canvas>
+<div id="glitchContainer"></div>
+
+<script>
+const canvas = document.getElementById("canvas");
+const ctx = canvas.getContext("2d");
+const container = document.getElementById("glitchContainer");
+
+canvas.width = window.innerWidth;
+canvas.height = window.innerHeight;
+
+const chars = "▓▒░█@#$%&*!?<>/\\[]{}0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+let glitchInterval;
+
+/* Texte corrompu multicolore */
+function randomText(){
+  let output="";
+  for(let i=0;i<150;i++){
+    output+=chars[Math.floor(Math.random()*chars.length)];
+    if(Math.random()>0.9) output+="\n";
+  }
+  return output;
+}
+
+/* Flash couleurs aléatoires */
+function randomBackground(){
+  const colors=["black","#110022","#220000","#002211","#111111","#003333","#330033"];
+  document.body.style.background=colors[Math.floor(Math.random()*colors.length)];
+}
+
+/* Fragmentation par blocs */
+function randomBlocks(){
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+
+  for(let i=0;i<20;i++){
+    const x=Math.random()*canvas.width;
+    const y=Math.random()*canvas.height;
+    const w=Math.random()*300;
+    const h=Math.random()*100;
+    ctx.fillStyle=`rgba(${Math.random()*255},
+                        ${Math.random()*255},
+                        ${Math.random()*255},0.6)`;
+    ctx.fillRect(x,y,w,h);
+  }
+}
+
+/* Bandes qui traversent */
+function randomBand(){
+  const band=document.createElement("div");
+  band.className="band";
+  band.style.top=Math.random()*window.innerHeight+"px";
+  band.style.height=(Math.random()*80+20)+"px";
+  document.body.appendChild(band);
+
+  setTimeout(()=>band.remove(),200);
+}
+
+/* Lancement chaos */
+function startGlitch(){
+
+  container.classList.add("rgb","shake");
+
+  glitchInterval=setInterval(()=>{
+    container.textContent=randomText();
+    randomBackground();
+    randomBlocks();
+
+    if(Math.random()>0.7){
+      randomBand();
+    }
+
+  },40);
+
+  setTimeout(stopGlitch,5000);
+}
+
+function stopGlitch(){
+  clearInterval(glitchInterval);
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+  container.classList.remove("rgb","shake");
+  container.textContent="";
+  document.body.style.background="black";
+}
+
+startGlitch();
+</script>
+
+</body>
+</html>
