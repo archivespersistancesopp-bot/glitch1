@@ -14,6 +14,12 @@ html,body{
   font-family:monospace;
 }
 
+canvas{
+  position:fixed;
+  inset:0;
+  z-index:1;
+}
+
 #glitchContainer{
   position:fixed;
   inset:0;
@@ -25,9 +31,20 @@ html,body{
   text-align:center;
   color:white;
   mix-blend-mode:screen;
+  z-index:3;
 }
 
-/* RGB Shift */
+#ghostLogo{
+  position:fixed;
+  top:50%;
+  left:50%;
+  transform:translate(-50%,-50%);
+  pointer-events:none;
+  opacity:0;
+  mix-blend-mode:screen;
+  z-index:4;
+}
+
 .rgb{
   animation:rgbShift 0.05s infinite;
 }
@@ -38,7 +55,6 @@ html,body{
   100%{text-shadow:5px 0 red,-5px 0 cyan;}
 }
 
-/* Tremblement */
 .shake{
   animation:shake 0.05s infinite;
 }
@@ -51,7 +67,6 @@ html,body{
   100%{transform:translate(0,0);}
 }
 
-/* Bandes horizontales */
 .band{
   position:absolute;
   width:100%;
@@ -74,19 +89,31 @@ html,body{
 
 <canvas id="canvas"></canvas>
 <div id="glitchContainer"></div>
+<img id="ghostLogo" src="logo.png">
 
 <script>
 const canvas = document.getElementById("canvas");
 const ctx = canvas.getContext("2d");
 const container = document.getElementById("glitchContainer");
+const logo = document.getElementById("ghostLogo");
 
 canvas.width = window.innerWidth;
 canvas.height = window.innerHeight;
 
 const chars = "▓▒░█@#$%&*!?<>/\\[]{}0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ";
-let glitchInterval;
 
-/* Texte corrompu multicolore */
+let glitchInterval;
+let startTime = Date.now();
+let logoAppearances = 0;
+
+/* --- Génération des 3 moments exacts --- */
+let appearanceTimes = [];
+for(let i=0;i<3;i++){
+  appearanceTimes.push(Math.random()*9000 + 500); // entre 0.5s et 9.5s
+}
+appearanceTimes.sort((a,b)=>a-b);
+
+/* Texte chaos */
 function randomText(){
   let output="";
   for(let i=0;i<150;i++){
@@ -96,37 +123,73 @@ function randomText(){
   return output;
 }
 
-/* Flash couleurs aléatoires */
+/* Fond */
 function randomBackground(){
   const colors=["black","#110022","#220000","#002211","#111111","#003333","#330033"];
   document.body.style.background=colors[Math.floor(Math.random()*colors.length)];
 }
 
-/* Fragmentation par blocs */
+/* Blocs */
 function randomBlocks(){
   ctx.clearRect(0,0,canvas.width,canvas.height);
-
   for(let i=0;i<20;i++){
-    const x=Math.random()*canvas.width;
-    const y=Math.random()*canvas.height;
-    const w=Math.random()*300;
-    const h=Math.random()*100;
     ctx.fillStyle=`rgba(${Math.random()*255},
                         ${Math.random()*255},
                         ${Math.random()*255},0.6)`;
-    ctx.fillRect(x,y,w,h);
+    ctx.fillRect(
+      Math.random()*canvas.width,
+      Math.random()*canvas.height,
+      Math.random()*300,
+      Math.random()*100
+    );
   }
 }
 
-/* Bandes qui traversent */
+/* Bandes */
 function randomBand(){
   const band=document.createElement("div");
   band.className="band";
   band.style.top=Math.random()*window.innerHeight+"px";
   band.style.height=(Math.random()*80+20)+"px";
   document.body.appendChild(band);
-
   setTimeout(()=>band.remove(),200);
+}
+
+/* --- Logo corrompu --- */
+function ghostFlash(){
+
+  const sizeVariation = Math.random();
+  let scale;
+
+  if(sizeVariation > 0.7){
+    scale = Math.random()*2.5 + 2;
+  } else if(sizeVariation > 0.4){
+    scale = Math.random()*1.2 + 1;
+  } else {
+    scale = Math.random()*0.7 + 0.6;
+  }
+
+  logo.style.width = (35 * scale) + "%";
+
+  logo.style.filter = `
+    hue-rotate(${Math.random()*360}deg)
+    saturate(${Math.random()*6+2})
+    contrast(${Math.random()*5+1})
+    brightness(${Math.random()*2+0.5})
+    ${Math.random()>0.5 ? "invert(1)" : ""}
+  `;
+
+  logo.style.opacity = Math.random()*0.3 + 0.05;
+
+  logo.style.transform = `
+    translate(-50%,-50%)
+    translate(${Math.random()*250-125}px,
+              ${Math.random()*250-125}px)
+  `;
+
+  setTimeout(()=>{
+    logo.style.opacity = 0;
+  }, Math.random()*150 + 60);
 }
 
 /* Lancement chaos */
@@ -135,6 +198,9 @@ function startGlitch(){
   container.classList.add("rgb","shake");
 
   glitchInterval=setInterval(()=>{
+
+    const elapsed = Date.now() - startTime;
+
     container.textContent=randomText();
     randomBackground();
     randomBlocks();
@@ -143,9 +209,16 @@ function startGlitch(){
       randomBand();
     }
 
+    /* Apparition contrôlée */
+    if(logoAppearances < 3 &&
+       elapsed >= appearanceTimes[logoAppearances]){
+        ghostFlash();
+        logoAppearances++;
+    }
+
   },40);
 
-  setTimeout(stopGlitch,5000);
+  setTimeout(stopGlitch,10000);
 }
 
 function stopGlitch(){
@@ -154,6 +227,7 @@ function stopGlitch(){
   container.classList.remove("rgb","shake");
   container.textContent="";
   document.body.style.background="black";
+  logo.style.opacity=0;
 }
 
 startGlitch();
